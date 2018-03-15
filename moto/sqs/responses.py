@@ -181,9 +181,8 @@ class SQSResponse(BaseResponse):
     def set_queue_attributes(self):
         # TODO validate self.get_param('QueueUrl')
         queue_name = self._get_queue_name()
-        for key, value in self.attribute.items():
-            key = camelcase_to_underscores(key)
-            self.sqs_backend.set_queue_attribute(queue_name, key, value)
+        self.sqs_backend.set_queue_attributes(queue_name, self.attribute)
+
         return SET_QUEUE_ATTRIBUTE_RESPONSE
 
     def delete_queue(self):
@@ -325,7 +324,7 @@ class SQSResponse(BaseResponse):
         try:
             wait_time = int(self.querystring.get("WaitTimeSeconds")[0])
         except TypeError:
-            wait_time = queue.wait_time_seconds
+            wait_time = queue.receive_message_wait_time_seconds
 
         try:
             visibility_timeout = self._get_validated_visibility_timeout()

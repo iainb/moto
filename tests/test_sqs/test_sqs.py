@@ -958,3 +958,24 @@ def test_redrive_policy_available():
     attributes = sqs.get_queue_attributes(QueueUrl=queue_url2)['Attributes']
     assert 'RedrivePolicy' in attributes
     assert json.loads(attributes['RedrivePolicy']) == redrive_policy
+
+@mock_sqs
+def test_redrive_policy_set_attributes():
+    sqs = boto3.resource('sqs', region_name='us-east-1')
+
+    queue = sqs.create_queue(QueueName='test-queue')
+    deadletter_queue = sqs.create_queue(QueueName='test-deadletter')
+
+    redrive_policy = {
+        'deadLetterTargetArn': deadletter_queue.attributes['QueueArn'],
+        'maxReceiveCount': 1,
+    }
+
+
+    queue.set_attributes(Attributes={
+        'RedrivePolicy': json.dumps(redrive_policy)})
+
+    copy = sqs.get_queue_by_name(QueueName='test-queue')
+    assert 'RedrivePolicy' in copy.attributes
+    copy_policy = json.loads(copy.attributes['RedrivePolicy'])
+    assert copy_policy == redrive_policy
